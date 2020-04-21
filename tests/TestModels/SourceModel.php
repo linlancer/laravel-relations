@@ -7,7 +7,9 @@
  */
 namespace LinLancer\Laravel\Tests\TestModels;
 
-class SourceModel extends \Illuminate\Database\Eloquent\Model
+use Illuminate\Database\Eloquent\Model;
+
+class SourceModel extends Model
 {
     public $connection = 'default';
 

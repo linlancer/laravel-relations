@@ -19,6 +19,7 @@ use LinLancer\Laravel\Relations\{
 
 class ExtraRelationsServiceProvider extends ServiceProvider
 {
+
     public function register()
     {
 
@@ -26,46 +27,59 @@ class ExtraRelationsServiceProvider extends ServiceProvider
 
     public function boot():void
     {
-        Builder::macro('belongsCompositeTo', function ($related, $foreignKey = [], $ownerKey = []) {
+        $getRelated = function ($class, $connection)
+        {
+            return tap(new $class, function ($instance) use ($connection) {
+                if (! $instance->getConnectionName()) {
+                    $instance->setConnection($connection);
+                }
+            });
+        };
+
+        Builder::macro('belongsCompositeTo', function ($related, $foreignKey = [], $ownerKey = []) use ($getRelated) {
             /**
              * @var $model Model
              */
             $model = $this->getModel();
-            $instance = $model->newRelatedInstance($related);
-            return new BelongsCompositeTo($instance->getQuery(), $model, $foreignKey, $ownerKey, null);
+            $connection = $model->getConnectionName();
+            $instance = $getRelated($related, $connection);
+            return new BelongsCompositeTo($instance->newQuery(), $model, $foreignKey, $ownerKey, null);
         });
 
-        Builder::macro('hasManyComposite', function ($related, $foreignKey = [], $localKey = []) {
+        Builder::macro('hasManyComposite', function ($related, $foreignKey = [], $localKey = []) use ($getRelated) {
             /**
              * @var $model Model
              */
             $model = $this->getModel();
-            $instance = $model->newRelatedInstance($related);
+            $connection = $model->getConnectionName();
+            $instance = $getRelated($related, $connection);
             $foreignKey = $foreignKey ?: $model->getForeignKey();
             $localKey = $localKey ?: $model->getKeyName();
             return new HasManyComposite($instance->newQuery(), $model, $foreignKey, $localKey);
         });
 
-        Builder::macro('hasOneComposite', function ($related, $foreignKey = [], $localKey = []) {
+        Builder::macro('hasOneComposite', function ($related, $foreignKey = [], $localKey = []) use ($getRelated) {
             /**
              * @var $model Model
              */
             $model = $this->getModel();
-            $instance = $model->newRelatedInstance($related);
+            $connection = $model->getConnectionName();
+            $instance = $getRelated($related, $connection);
             $foreignKey = $foreignKey ?: $model->getForeignKey();
             $localKey = $localKey ?: $model->getKeyName();
             return new HasOneComposite($instance->newQuery(), $model, $foreignKey, $localKey);
         });
 
-        Builder::macro('hasManyFromStr', function ($related, $foreignKey = null, $localKey = null, $separator = ',') {
+        Builder::macro('hasManyFromStr', function ($related, $foreignKey = null, $localKey = null, $separator = ',') use ($getRelated) {
             /**
              * @var $model Model
              */
             $model = $this->getModel();
-            $instance = $model->newRelatedInstance($related);
+            $connection = $model->getConnectionName();
+            $instance = $getRelated($related, $connection);
             $foreignKey = $foreignKey ?: $model->getForeignKey();
             $localKey = $localKey ?: $model->getKeyName();
-            return new HasManyFromStr($instance->getQuery(), $model, $instance->getTable().'.'.$foreignKey, $localKey, $separator);
+            return new HasManyFromStr($instance->newQuery(), $model, $instance->getTable().'.'.$foreignKey, $localKey, $separator);
         });
 
         \Illuminate\Database\Query\Builder::macro('sql', function () {
@@ -131,6 +145,8 @@ class ExtraRelationsServiceProvider extends ServiceProvider
             return $this->setQuery($query);
         });
     }
+
+
 
 
 }

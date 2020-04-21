@@ -8,17 +8,20 @@
 namespace LinLancer\Laravel\Tests;
 
 use Illuminate\Container\Container;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use LinLancer\Laravel\ExtraRelationsServiceProvider;
 use LinLancer\Laravel\Relations\HasManyFromStr;
+use LinLancer\Laravel\Tests\TestModels\RelationModel;
 use LinLancer\Laravel\Tests\TestModels\SourceModel;
+use PHPUnit\Framework\TestCase;
 
-class ExtraRelationsServiceProviderTest extends \PHPUnit\Framework\TestCase
+class ExtraRelationsServiceProviderTest extends TestCase
 {
     public function init()
     {
-        $manager = new \Illuminate\Database\Capsule\Manager;
+        $manager = new Manager;
         $options = [
             'driver'    => 'mysql',
             'host'      => '127.0.0.1',
@@ -40,7 +43,7 @@ class ExtraRelationsServiceProviderTest extends \PHPUnit\Framework\TestCase
 
         $this->assertTrue($rc->isSubclassOf(\Illuminate\Support\ServiceProvider::class));
     }
-    public function testMacroOnBoot()
+    public function testHasManyFromStrMacroOnBoot()
     {
         $this->init();
         $app = Container::getInstance();
@@ -49,9 +52,11 @@ class ExtraRelationsServiceProviderTest extends \PHPUnit\Framework\TestCase
 
         $model = new SourceModel;
         $this->assertInstanceOf(Model::class, $model);
-
-        $relation = $model->relations;
-        $this->assertInstanceOf(HasManyFromStr::class, $relation);
+        $relations = $model->relations;
+        $this->assertInstanceOf(Collection::class, $relations);
+        foreach ($relations as $relation) {
+            $this->assertInstanceOf(HasManyFromStr::class, $relation);
+        }
 
     }
 }
