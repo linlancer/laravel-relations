@@ -21,6 +21,11 @@
       "LinLancer\\Laravel\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "LinLancer\\Laravel\\Tests\\": "tests/"
+    }
+  },
   "extra": {
     "laravel": {
       "providers": [
