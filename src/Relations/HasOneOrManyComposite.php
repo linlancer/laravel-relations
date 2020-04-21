@@ -56,17 +56,18 @@ abstract class HasOneOrManyComposite extends Relation
         $this->localKey = $localKey;
         $this->foreignKey = $foreignKey;
 
-        parent::__construct($query, $parent);
         //外键关联的子表
-        $childTable = $this->getConnection()->getTablePrefix() . $this->related->getTable();
+        $childTable = $query->getConnection()->getTablePrefix() . $query->getModel()->getTable();
         //主表
-        $relatedTable = $this->getConnection()->getTablePrefix() . $parent->getTable();
+        $relatedTable = $query->getConnection()->getTablePrefix() . $parent->getTable();
         //主键
         $localKey = sprintf($this->pattern, ...$localKey);
         $this->localKeyWithTable = str_replace('table', $relatedTable, $localKey);
         //外键
         $foreignKey = sprintf($this->pattern, ...$foreignKey);
         $this->foreignKeyWithTable = str_replace('table', $childTable, $foreignKey);
+
+        parent::__construct($query, $parent);
     }
 
     /**
@@ -89,8 +90,9 @@ abstract class HasOneOrManyComposite extends Relation
      */
     public function addConstraints()
     {
+        $parentKey = $this->getParentKey();
         if (static::$constraints) {
-            $this->query->whereRaw("{$this->localKeyWithTable} = {$this->foreignKeyWithTable}");
+            $this->query->whereRaw("{$this->foreignKeyWithTable} = $parentKey");
 
 //            $this->query->whereNotNull($this->foreignKey);
         }

@@ -64,6 +64,24 @@ class ExtraRelationsServiceProviderTest extends TestCase
 
     }
 
+    public function testHasManyFromStrMacroOnWith()
+    {
+        $this->init();
+        $app = Container::getInstance();
+        $providerMock = new ExtraRelationsServiceProvider($app);
+        $providerMock->boot();
+
+        $model = new SourceModel;
+        $find = $model->with('relations')->first();
+        $this->assertInstanceOf(Model::class, $find);
+        $relations = $find->relations;
+        $this->assertInstanceOf(Collection::class, $relations);
+        foreach ($relations as $relation) {
+            $this->assertInstanceOf(RelationModel::class, $relation);
+        }
+
+    }
+
     public function testHasOneCompositeMacroOnBoot()
     {
         $this->init();
@@ -74,11 +92,9 @@ class ExtraRelationsServiceProviderTest extends TestCase
         $model = new SourceModel;
         $find = $model->first();
         $this->assertInstanceOf(Model::class, $find);
-        $relations = $find->compositeRelation;
-        $this->assertInstanceOf(Collection::class, $relations);
-        foreach ($relations as $relation) {
-            $this->assertInstanceOf(HasOneComposite::class, $relation);
-        }
+        $relation = $find->compositeRelation;
+        $this->assertInstanceOf(RelationModel::class, $relation);
+
     }
 
     public function testHasManyCompositeMacroOnBoot()
