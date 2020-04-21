@@ -12,7 +12,9 @@ use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use LinLancer\Laravel\ExtraRelationsServiceProvider;
+use LinLancer\Laravel\Relations\HasManyComposite;
 use LinLancer\Laravel\Relations\HasManyFromStr;
+use LinLancer\Laravel\Relations\HasOneComposite;
 use LinLancer\Laravel\Tests\TestModels\RelationModel;
 use LinLancer\Laravel\Tests\TestModels\SourceModel;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +45,7 @@ class ExtraRelationsServiceProviderTest extends TestCase
 
         $this->assertTrue($rc->isSubclassOf(\Illuminate\Support\ServiceProvider::class));
     }
+
     public function testHasManyFromStrMacroOnBoot()
     {
         $this->init();
@@ -51,12 +54,46 @@ class ExtraRelationsServiceProviderTest extends TestCase
         $providerMock->boot();
 
         $model = new SourceModel;
-        $this->assertInstanceOf(Model::class, $model);
-        $relations = $model->relations;
+        $find = $model->first();
+        $this->assertInstanceOf(Model::class, $find);
+        $relations = $find->relations;
         $this->assertInstanceOf(Collection::class, $relations);
         foreach ($relations as $relation) {
-            $this->assertInstanceOf(HasManyFromStr::class, $relation);
+            $this->assertInstanceOf(RelationModel::class, $relation);
         }
 
+    }
+
+    public function testHasOneCompositeMacroOnBoot()
+    {
+        $this->init();
+        $app = Container::getInstance();
+        $providerMock = new ExtraRelationsServiceProvider($app);
+        $providerMock->boot();
+
+        $model = new SourceModel;
+        $find = $model->first();
+        $this->assertInstanceOf(Model::class, $find);
+        $relations = $find->compositeRelation;
+        $this->assertInstanceOf(Collection::class, $relations);
+        foreach ($relations as $relation) {
+            $this->assertInstanceOf(HasOneComposite::class, $relation);
+        }
+    }
+
+    public function testHasManyCompositeMacroOnBoot()
+    {
+        $this->init();
+        $app = Container::getInstance();
+        $providerMock = new ExtraRelationsServiceProvider($app);
+        $providerMock->boot();
+
+        $model = new SourceModel;
+        $this->assertInstanceOf(Model::class, $model);
+        $relations = $model->compositeRelations;
+        $this->assertInstanceOf(Collection::class, $relations);
+        foreach ($relations as $relation) {
+            $this->assertInstanceOf(HasManyComposite::class, $relation);
+        }
     }
 }

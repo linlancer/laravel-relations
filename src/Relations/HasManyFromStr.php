@@ -24,9 +24,19 @@ class HasManyFromStr extends HasOneOrMany
      */
     public function getResults()
     {
-        return ! is_null($this->getParentKey())
+        $parentKey = $this->getParentKey();
+        return ! is_null($parentKey)
             ? $this->query->get()
             : $this->related->newCollection();
+    }
+
+    public function addConstraints()
+    {
+        if (static::$constraints) {
+            $this->query->whereIn($this->foreignKey, explode($this->separator, $this->getParentKey()));
+
+            $this->query->whereNotNull($this->foreignKey);
+        }
     }
 
     /**

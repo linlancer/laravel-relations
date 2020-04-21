@@ -58,9 +58,9 @@ abstract class HasOneOrManyComposite extends Relation
 
         parent::__construct($query, $parent);
         //外键关联的子表
-        $childTable= $this->getConnection()->getTablePrefix() . $this->related->getTable();
+        $childTable = $this->getConnection()->getTablePrefix() . $this->related->getTable();
         //主表
-        $relatedTable= $this->getConnection()->getTablePrefix() . $parent->getTable();
+        $relatedTable = $this->getConnection()->getTablePrefix() . $parent->getTable();
         //主键
         $localKey = sprintf($this->pattern, ...$localKey);
         $this->localKeyWithTable = str_replace('table', $relatedTable, $localKey);

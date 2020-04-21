@@ -19,6 +19,15 @@ class SourceModel extends Model
 
     public function relations()
     {
-        return $this->hasManyFromStr(RelationModel::class, 'ids', 'id');
+        return $this->hasManyFromStr(RelationModel::class, 'id', 'ids');
+    }
+
+    public function compositeRelation()
+    {
+        return $this->hasOneComposite(RelationModel::class, ['name', 'code'], ['name', 'code']);
+    }
+    public function compositeRelations()
+    {
+        return $this->hasManyComposite(RelationModel::class, ['name', 'code'], ['name', 'code']);
     }
 }
