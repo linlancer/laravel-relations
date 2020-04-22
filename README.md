@@ -49,19 +49,19 @@ laravel扩展关联 多字段关联匹配 特殊字符分隔关联匹配
     具体用法可以如下
     
     
-    ```
-    $where['condition1'] = ['between', [1,10]];
+```
+        $where['condition1'] = ['between', [1,10]];
         $where['condition2'] = ['in', [21,25,12]];
         $model = new Order;
         $model->where('condition3', 'aaaaabbb')
             ->whereIn('condition4', [1,2,3])
             ->handle($where)
             ->sql();
-    ```
+```
     
     最终生成的语句如下
     
-    ```
-    "select * from `hp_order` where `condition3` = ? and `condition4` in (?, ?, ?) and `condition1` between ? and ? and `condition2` in (?, ?, ?)"
+```
+        "select * from `hp_order` where `condition3` = ? and `condition4` in (?, ?, ?) and `condition1` between ? and ? and `condition2` in (?, ?, ?)"
 
-    ```
+```
