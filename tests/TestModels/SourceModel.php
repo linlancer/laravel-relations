@@ -30,4 +30,9 @@ class SourceModel extends Model
     {
         return $this->hasManyComposite(RelationModel::class, ['name', 'code'], ['name', 'code']);
     }
+
+    public function belongsCompositeRelation()
+    {
+        return $this->belongsCompositeTo(RelationModel::class, ['name', 'code'], ['name', 'code']);
+    }
 }

@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Concerns\SupportsDefaultModels;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
+use LinLancer\Laravel\Relations\Traits\MultiKeysRelations;
 
 class BelongsCompositeTo extends Relation
 {
     use SupportsDefaultModels;
+    use MultiKeysRelations;
 
     /**
      * The child model instance of the relation.
@@ -70,17 +72,17 @@ class BelongsCompositeTo extends Relation
         // one is we will create a "child" variable for much better readability.
         $this->child = $child;
 
-        parent::__construct($query, $child);
 
-        $relatedTable = $this->getConnection()->getTablePrefix() . $this->related->getTable();
-        $childTable = $this->getConnection()->getTablePrefix() . $this->child->getTable();
+
+        $relatedTable = $query->getConnection()->getTablePrefix() . $query->getModel()->getTable();
+        $childTable = $query->getConnection()->getTablePrefix() . $this->child->getTable();
         $this->ownerKey = $ownerKey;
-        $ownerKey = sprintf($this->pattern, ...$ownerKey);
-        $this->ownerKeyWithTable = str_replace('table', $relatedTable, $ownerKey);
+        $this->ownerKeyWithTable = $this->getKeyPattern($ownerKey, $relatedTable);
         $this->relationName = $relationName;
         $this->foreignKey = $foreignKey;
-        $foreignKey = sprintf($this->pattern, ...$foreignKey);
-        $this->foreignKeyWithTable = str_replace('table', $childTable, $foreignKey);
+        $this->foreignKeyWithTable = $this->getKeyPattern($foreignKey, $childTable);
+
+        parent::__construct($query, $child);
 
     }
 
@@ -144,10 +146,11 @@ class BelongsCompositeTo extends Relation
         // to query for via the eager loading query. We will add them to an array then
         // execute a "where in" statement to gather up all of those related records.
         foreach ($models as $model) {
-            if (! is_null($value1 = $model->{reset($this->foreignKey)}) && ! is_null($value2 = $model->{end($this->foreignKey)})) {
-                $pattern = '(\'%s\',\'%s\')';
-                $keys[] = sprintf($pattern, $value1, $value2);
+            $foreignKeys = $this->getKeyValueFromModel($this->foreignKey, $model);
+            if (!empty($foreignKeys)) {
+                $keys[] = $foreignKeys;
             }
+
         }
 
         sort($keys);
@@ -191,17 +194,23 @@ class BelongsCompositeTo extends Relation
         $dictionary = [];
 
         foreach ($results as $result) {
-            $attrKey = $result->getAttribute(reset($owner)).$result->getAttribute(end($owner));
-            $dictionary[$attrKey] = $result;
+            $attrKeys = $this->getAttributes($owner, $result);
+            if (!empty($attrKeys)) {
+                $attrKey = implode($attrKeys);
+                $dictionary[$attrKey] = $result;
+            }
         }
 
         // Once we have the dictionary constructed, we can loop through all the parents
         // and match back onto their children using these keys of the dictionary and
         // the primary key of the children to map them onto the correct instances.
         foreach ($models as $model) {
-            $attrKey = $model->{reset($foreign)}.$model->{end($foreign)};
-            if (isset($dictionary[$attrKey])) {
-                $model->setRelation($relation, $dictionary[$attrKey]);
+            $attrKeys = $this->getAttributes($foreign, $model);
+            if (!empty($attrKeys)) {
+                $attrKey = implode($attrKeys);
+                if (isset($dictionary[$attrKey])) {
+                    $model->setRelation($relation, $dictionary[$attrKey]);
+                }
             }
         }
 
@@ -266,11 +275,7 @@ class BelongsCompositeTo extends Relation
         }
         $key1 = $this->getQualifiedForeignKeyName();
         $key2 = $this->qualifyColumns($this->ownerKey, $query->getModel());
-        return $query->select($columns)->whereColumn(
-            reset($key1), '=', reset($key2)
-        )->whereColumn(
-            end($key1), '=', end($key2)
-        );
+        return $this->setBuilderByKeyPair($query->select($columns), $key1, $key2);
     }
 
     /**
@@ -289,11 +294,10 @@ class BelongsCompositeTo extends Relation
 
         $query->getModel()->setTable($hash);
         $foreignKeys = $this->getQualifiedForeignKeyName();
-        return $query->whereColumn(
-            $hash.'.'.reset($this->ownerKey), '=', reset($foreignKeys)
-        )->whereColumn(
-            $hash.'.'.end($this->ownerKey), '=', end($foreignKeys)
-        );
+        $ownerKeys = array_map(function ($value) use ($hash) {
+            return $hash . '.' . $value;
+        }, $this->ownerKey);
+        return $this->setBuilderByKeyPair($query, $ownerKeys, $foreignKeys);
     }
 
     /**

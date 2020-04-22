@@ -12,9 +12,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use LinLancer\Laravel\Relations\Traits\MultiKeysRelations;
 
 abstract class HasOneOrManyComposite extends Relation
 {
+    use MultiKeysRelations;
     /**
      * The foreign key of the parent model.
      *
@@ -61,11 +63,9 @@ abstract class HasOneOrManyComposite extends Relation
         //主表
         $relatedTable = $query->getConnection()->getTablePrefix() . $parent->getTable();
         //主键
-        $localKey = sprintf($this->pattern, ...$localKey);
-        $this->localKeyWithTable = str_replace('table', $relatedTable, $localKey);
+        $this->localKeyWithTable = $this->getKeyPattern($localKey, $relatedTable);
         //外键
-        $foreignKey = sprintf($this->pattern, ...$foreignKey);
-        $this->foreignKeyWithTable = str_replace('table', $childTable, $foreignKey);
+        $this->foreignKeyWithTable = $this->getKeyPattern($foreignKey, $childTable);
 
         parent::__construct($query, $parent);
     }
@@ -121,12 +121,7 @@ abstract class HasOneOrManyComposite extends Relation
     protected function getKeys(array $models, $key = [])
     {
         return collect($models)->map(function ($value) use ($key) {
-            $first = reset($key);
-            $second = end($key);
-            $firstValue = $first ? $value->getAttribute($first) : $value->getKey();
-            $secondValue = $second ? $value->getAttribute($second) : $value->getKey();
-            $pattern = '(\'%s\',\'%s\')';
-            return sprintf($pattern, $firstValue, $secondValue);
+            return $this->getKeyValueFromModel($key, $value);
         })->values()->unique(null, true)->sort()->all();
     }
 
@@ -173,10 +168,14 @@ abstract class HasOneOrManyComposite extends Relation
         // link them up with their children using the keyed dictionary to make the
         // matching very convenient and easy work. Then we'll just return them.
         foreach ($models as $model) {
-            if (isset($dictionary[$key = $model->getAttribute(reset($this->localKey)).'.'.$model->getAttribute(end($this->localKey))])) {
-                $model->setRelation(
-                    $relation, $this->getRelationValue($dictionary, $key, $type)
-                );
+            $attrKeys = $this->getAttributes($this->localKey, $model);
+            if (!empty($attrKeys)) {
+                $attrKey = implode($attrKeys);
+                if (isset($dictionary[$attrKey])) {
+                    $model->setRelation(
+                        $relation, $this->getRelationValue($dictionary, $attrKey, $type)
+                    );
+                }
             }
         }
 
@@ -209,8 +208,13 @@ abstract class HasOneOrManyComposite extends Relation
         $foreign = $this->foreignKey;
 
         return $results->mapToDictionary(function ($result) use ($foreign) {
-            return [$result->{reset($foreign)}.'.'.$result->{end($foreign)} => $result];
-        })->all();
+            $attrKeys = $this->getAttributes($foreign, $result);
+            if (!empty($attrKeys)) {
+                $attrKey = implode($attrKeys);
+                return [$attrKey => $result];
+            }
+            return null;
+        })->filter()->all();
     }
 
     /**
@@ -415,12 +419,9 @@ abstract class HasOneOrManyComposite extends Relation
      */
     public function getParentKey()
     {
-        $firstValue = $this->parent->getAttribute(reset($this->localKey));
-        $secondValue =  $this->parent->getAttribute(end($this->localKey));
-        $firstValue = is_numeric($firstValue) ? $firstValue : '\''.$firstValue.'\'';
-        $secondValue = is_numeric($secondValue) ? $secondValue : '\''.$secondValue.'\'';
-        $pattern = '(%s,%s)';
-        return sprintf($pattern, $firstValue, $secondValue);
+        $pattern = '(%s)';
+        $attributes = $this->getAttributes($this->localKey, $this->parent);
+        return sprintf($pattern, implode(',', $attributes));
     }
 
     /**

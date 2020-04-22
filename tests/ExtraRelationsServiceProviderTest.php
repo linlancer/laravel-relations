@@ -146,4 +146,21 @@ class ExtraRelationsServiceProviderTest extends TestCase
             $this->assertInstanceOf(RelationModel::class, $relation);
         }
     }
+
+    public function testBelongsCompositeToMacroOnWith()
+    {
+        $this->init();
+        $app = Container::getInstance();
+        $providerMock = new ExtraRelationsServiceProvider($app);
+        $providerMock->boot();
+
+        $model = new SourceModel;
+        $find = $model->with('belongsCompositeRelation')->first();
+        $this->assertInstanceOf(Model::class, $model);
+        $relations = $find->compositeRelations;
+        $this->assertInstanceOf(Collection::class, $relations);
+        foreach ($relations as $relation) {
+            $this->assertInstanceOf(RelationModel::class, $relation);
+        }
+    }
 }
