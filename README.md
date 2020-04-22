@@ -6,7 +6,7 @@ laravel扩展关联 多字段关联匹配 特殊字符分隔关联匹配
 ## INSTALLATION
   使用composer作为包管理引入
   ```
-  composer require linlancer/laravel-ralations ~1.0
+  composer require linlancer/laravel-relations
   ```
 
 ## USAGE
