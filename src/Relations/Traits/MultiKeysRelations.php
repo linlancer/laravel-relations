@@ -9,6 +9,7 @@
 namespace LinLancer\Laravel\Relations\Traits;
 
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 
 trait MultiKeysRelations
@@ -42,10 +43,13 @@ trait MultiKeysRelations
 
     private function getAttributes($keys, $model)
     {
+        /**
+         * @var Model $model
+         */
         $values = [];
         foreach ($keys as $key) {
-            if (! is_null($model->{$key})) {
-                $values[] = $model->{$key};
+            if (! is_null($model->getAttribute($key))) {
+                $values[] = $model->getAttribute($key);
             } else {
                 $values = [];
                 continue;

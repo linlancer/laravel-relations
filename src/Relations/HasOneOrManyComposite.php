@@ -90,8 +90,9 @@ abstract class HasOneOrManyComposite extends Relation
      */
     public function addConstraints()
     {
-        $parentKey = $this->getParentKey();
+
         if (static::$constraints) {
+            $parentKey = $this->getParentKey();
             $this->query->whereRaw("{$this->foreignKeyWithTable} = $parentKey");
 
 //            $this->query->whereNotNull($this->foreignKey);
