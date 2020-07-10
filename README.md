@@ -8,6 +8,14 @@ laravel扩展关联 多字段关联匹配 特殊字符分隔关联匹配
   ```
   composer require linlancer/laravel-relations
   ```
+  在 config文件夹中 修改app.php中的 providers 在末尾中加入
+  ```
+        /**
+         * ExtraRelations
+         */
+        \LinLancer\Laravel\ExtraRelationsServiceProvider::class,
+  ```
+  
 
 ## USAGE
   组件内实现了一对多、 一对一、一对一反向多键关联、一对一根据特殊字符分隔关联（一对多）
