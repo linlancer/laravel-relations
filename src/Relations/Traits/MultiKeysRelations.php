@@ -32,10 +32,18 @@ trait MultiKeysRelations
 
     private function getKeyValueFromModel($keys, $model)
     {
-        $pattern = '(\'%s\')';
+        $pattern = '(%s)';
         $values = $this->getAttributes($keys, $model);
         if (!empty($values)) {
-            return sprintf($pattern, implode('\', \'', $values));
+            $condition = [];
+            foreach ($values as $value) {
+                if (is_int($value)) {
+                    $condition[] = $value;
+                } else {
+                    $condition[] = '\'' . $value . '\'';
+                }
+            }
+            return sprintf($pattern, implode(',', $condition));
         } else {
             return null;
         }
