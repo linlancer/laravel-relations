@@ -84,7 +84,22 @@ class ExtraRelationsServiceProvider extends ServiceProvider
 
         \Illuminate\Database\Query\Builder::macro('sql', function () {
             $bindings = $this->getBindings();
-            $sql = str_replace('?','\'%s\'',$this->toSql());
+            $types = [];
+            $sql = $this->toSql();
+
+            foreach ($bindings as $key => $value) {
+                if (!is_string($key)) {
+                    if (is_int($value)) {
+                        $types[] = '%d';
+                    } elseif (is_float($value)) {
+                        $types[] = '%g';
+                    } else {
+                        $types[] = '\'%s\'';
+                    }
+                }
+            }
+            $sql = str_ireplace('?', '%s', $sql);
+            $sql = sprintf($sql, ...$types);
             return vsprintf($sql, $bindings);
         });
 
