@@ -25,6 +25,8 @@ trait MultiKeysRelations
         $pattern = '(%s)';
         $patternArr = [];
         for ($i = 0; $i < count($key); $i++) {
+            if (stripos($table, '.') !== false && stripos($table, '`.`') === false)
+                $table = str_replace('.', '`.`', $table);
             $patternArr[] = sprintf($unit, $table, $key[$i]);
         }
         return sprintf($pattern, implode(',', $patternArr));
