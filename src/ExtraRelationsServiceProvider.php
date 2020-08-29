@@ -70,7 +70,7 @@ class ExtraRelationsServiceProvider extends ServiceProvider
             return new HasOneComposite($instance->newQuery(), $model, $foreignKey, $localKey);
         });
 
-        Builder::macro('hasManyFromStr', function ($related, $foreignKey = null, $localKey = null, $separator = ',') use ($getRelated) {
+        Builder::macro('hasManyFromStr', function ($related, $foreignKey = null, $localKey = null, $separator = ',', $strict = false) use ($getRelated) {
             /**
              * @var $model Model
              */
@@ -79,7 +79,7 @@ class ExtraRelationsServiceProvider extends ServiceProvider
             $instance = $getRelated($related, $connection);
             $foreignKey = $foreignKey ?: $model->getForeignKey();
             $localKey = $localKey ?: $model->getKeyName();
-            return new HasManyFromStr($instance->newQuery(), $model, $instance->getTable().'.'.$foreignKey, $localKey, $separator);
+            return new HasManyFromStr($instance->newQuery(), $model, $instance->getTable().'.'.$foreignKey, $localKey, $separator, $strict);
         });
 
         \Illuminate\Database\Query\Builder::macro('sql', function () {

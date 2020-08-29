@@ -11,10 +11,13 @@ class HasManyFromStr extends HasOneOrMany
 {
     protected $separator = ',';
 
-    public function __construct(Builder $query, Model $parent, string $foreignKey, string $localKey, $separator)
+    protected $strict;
+
+    public function __construct(Builder $query, Model $parent, string $foreignKey, string $localKey, $separator, $strict = false)
     {
         parent::__construct($query, $parent, $foreignKey, $localKey);
         $this->separator = $separator;
+        $this->strict = $strict;
     }
 
     /**
@@ -33,7 +36,7 @@ class HasManyFromStr extends HasOneOrMany
     public function addConstraints()
     {
         if (static::$constraints) {
-            $this->query->whereIn($this->foreignKey, explode($this->separator, $this->getParentKey()));
+            $this->query->whereIn($this->foreignKey, $this->handleIn($separator, $keyString));
 
             $this->query->whereNotNull($this->foreignKey);
         }
@@ -71,7 +74,7 @@ class HasManyFromStr extends HasOneOrMany
         // matching very convenient and easy work. Then we'll just return them.
         foreach ($models as $model) {
             $keys = $model->getAttribute($this->localKey);
-            $keys = explode($this->separator, $keys);
+            $keys = $this->handleIn($this->separator, $keys);
             $keys = array_unique(array_filter($keys));
             $type = 'one';
             $relationResults = [];
@@ -101,8 +104,25 @@ class HasManyFromStr extends HasOneOrMany
         $keysArr = [];
         collect($models)->map(function ($value) use ($key, &$keysArr) {
             $result = $key ? $value->getAttribute($key) : $value->getKey();
-            $keysArr = array_merge($keysArr, explode(',', $result));
+            $keysArr = array_merge($keysArr, $this->handleIn($this->separator, $result));
         });
         return collect($keysArr)->values()->filter()->unique()->sort()->all();
+    }
+
+    /**
+     * @param $separator
+     * @param $keyString
+     * @return array
+     */
+    private function handleIn($separator, $keyString)
+    {
+        $keys = explode($separator, $keyString);
+        if ($this->strict === false)
+            return $keys;
+        array_walk($keys, function (&$value) {
+            $fun = $this->strict === true ? 'intval' : $this->strict;
+            $value = $fun($value);
+        });
+        return $keys;
     }
 }
