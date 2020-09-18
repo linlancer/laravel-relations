@@ -98,9 +98,13 @@ class ExtraRelationsServiceProvider extends ServiceProvider
                     }
                 }
             }
-            $sql = str_ireplace('?', '%s', $sql);
-            $sql = sprintf($sql, ...$types);
-            return vsprintf($sql, $bindings);
+            if (stripos($sql, '?') !== false) {
+                $sql = str_ireplace('?', '%s', $sql);
+                $sql = sprintf($sql, ...$types);
+                $sql = vsprintf($sql, $bindings);
+            }
+            return $sql;
+
         });
 
         Builder::macro('sql', function(){
